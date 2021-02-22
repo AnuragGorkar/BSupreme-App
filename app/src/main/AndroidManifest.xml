@@ -12,7 +12,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.BSupreme">
-        <activity android:name=".Activities.SelectBookRoomActivity"/>
+        <activity android:name=".Activities.BookingStatusActivity"></activity>
+        <activity android:name=".Activities.SelectBookRoomActivity" />
         <activity android:name=".Activities.BookRoomActivity" />
         <activity android:name=".Activities.SelectDateTableActivity" />
         <activity android:name=".Activities.BookTableActivity" />

@@ -1,48 +1,35 @@
 package com.example.bsupreme.Activities;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ImageView;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.Activity;
-import android.app.ActivityOptions;
-import android.content.Intent;
-import android.os.Bundle;
-import android.util.Log;
-import android.util.Pair;
-import android.view.MenuItem;
-import android.view.View;
-import android.widget.ImageView;
-
-import com.example.bsupreme.Adapters.RHListAdapter;
-import com.example.bsupreme.Models.RHListModel;
+import com.example.bsupreme.Fragments.RestaurantFragment;
+import com.example.bsupreme.Fragments.RoomFragment;
 import com.example.bsupreme.R;
-import com.firebase.ui.firestore.FirestoreRecyclerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.navigation.NavigationView;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.ismaeldivita.chipnavigation.ChipNavigationBar;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class BookingStatusActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     //Constants
     static final float END_SCALE = 0.8f;
 
     //Variables
     String filter_option;
-    private FirebaseFirestore db = FirebaseFirestore.getInstance();
-    private CollectionReference RHListref = db.collection("restaurants");
-    private RHListAdapter adapter;
+    // private FirebaseFirestore db = FirebaseFirestore.getInstance();
+    // private CollectionReference RHListref = db.collection("restaurants");
+    //private RHListAdapter adapter;
 
     CoordinatorLayout contentView;
 
@@ -53,11 +40,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     DrawerLayout drawerLayout;
     NavigationView navigationView;
     ImageView sideDrawerIcon;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_booking_status);
+
 
         //  Hooks
         chipNavigationBar = findViewById(R.id.bottom_nav_bar);
@@ -70,30 +57,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         navigationDrawer();
         bottomNavMenu();
-
     }
 
 
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item)
-    {
 
-        //onNavigationItemSelected(navigationView.getMenu().getItem(0));
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId())
         {
             case R.id.home_side_nav:
                 //navigationView.setCheckedItem(R.id.home_side_nav);
-                //navigationView.setCheckedItem(R.id.home_side_nav);
-                recreate();
+                //recreate();
+                redirectActivity(this, MainActivity.class);
                 break;
 
             case R.id.bookings_side_nav:
                 //navigationView.setCheckedItem(R.id.bookings_side_nav);
-                //navigationView.setCheckedItem(R.id.bookings_side_nav);
-                redirectActivity(this,BookingStatusActivity.class);
+                recreate();
+                //redirectActivity(this,MainActivity.class);
                 break;
         }
         drawerLayout.closeDrawer(GravityCompat.START);
+
         return true;
     }
 
@@ -122,8 +107,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Navigation Drawer
         navigationView.bringToFront();
         navigationView.setNavigationItemSelectedListener(this);
-        navigationView.setCheckedItem(R.id.home_side_nav);
-        //navigationView.setCheckedItem(item.getItemId());
+        navigationView.setCheckedItem(R.id.bookings_side_nav);
 
         sideDrawerIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -164,8 +148,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void bottomNavMenu() {
         chipNavigationBar.setItemSelected(R.id.bottom_nav_hotel, true);
+        getSupportFragmentManager().beginTransaction().replace(R.id.framelayout,new RoomFragment()).commit();
         filter_option = "hotels";
-        setUpRecyclerView(filter_option, true);
+//        setUpRecyclerView(filter_option, true);
+        //getSupportFragmentManager().beginTransaction().replace(R.id.main_activity_content,)
 
         chipNavigationBar.setOnItemSelectedListener(new ChipNavigationBar.OnItemSelectedListener() {
             @Override
@@ -173,63 +159,66 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Fragment fragment = null;
                 switch (i) {
                     case R.id.bottom_nav_hotel:
-                        filter_option = "hotels";
-                        setUpRecyclerView(filter_option, false);
+                        fragment = new RoomFragment();
+//                        filter_option = "hotels";
+                        //                       setUpRecyclerView(filter_option, false);
 
                         break;
                     case R.id.bottom_nav_restaurants:
-                        filter_option = "restaurants";
-                        setUpRecyclerView(filter_option, false);
+                        fragment = new RestaurantFragment();
+//                        filter_option = "restaurants";
+//                        setUpRecyclerView(filter_option, false);
                         break;
                 }
+                getSupportFragmentManager().beginTransaction().replace(R.id.framelayout,fragment).commit();
             }
         });
 
     }
 
     private void setUpRecyclerView(String filter_option, boolean first_create) {
-        Query query = RHListref.whereEqualTo("is_room", true);
-
-        if (filter_option.equals("hotels")) {
-            if (!first_create) adapter.stopListening();
-            query = RHListref.whereEqualTo("is_room", true);
-
-        } else if (filter_option.equals("restaurants")) {
-            if (!first_create) adapter.stopListening();
-            query = RHListref.whereEqualTo("is_tables", true);
-        }
-        FirestoreRecyclerOptions<RHListModel> options = new FirestoreRecyclerOptions.Builder<RHListModel>()
-                .setQuery(query, RHListModel.class)
-                .build();
-
-        adapter = new RHListAdapter(options);
-        adapter.startListening();
-        RecyclerView recyclerView = findViewById(R.id.RH_Recycler_View);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
-
-        adapter.setOnItemClickListener(new RHListAdapter.OnItemClickListener() {
-            @Override
-            public void OnItemClick(DocumentSnapshot documentSnapshot, int position) {
-                String docId = documentSnapshot.getId();
-                Intent intent = new Intent(MainActivity.this, DetailsBookingActivity.class);
-                intent.putExtra("documentId", docId);
-
-                startActivity(intent);
-            }
-        });
+//        Query query = RHListref.whereEqualTo("is_room", true);
+//
+//        if (filter_option.equals("hotels")) {
+//            if (!first_create) adapter.stopListening();
+//            query = RHListref.whereEqualTo("is_room", true);
+//
+//        } else if (filter_option.equals("restaurants")) {
+//            if (!first_create) adapter.stopListening();
+//            query = RHListref.whereEqualTo("is_tables", true);
+//        }
+//        FirestoreRecyclerOptions<RHListModel> options = new FirestoreRecyclerOptions.Builder<RHListModel>()
+//                .setQuery(query, RHListModel.class)
+//                .build();
+//
+//        adapter = new RHListAdapter(options);
+//        adapter.startListening();
+//        RecyclerView recyclerView = findViewById(R.id.RH_Recycler_View);
+//        recyclerView.setHasFixedSize(true);
+//        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+//        recyclerView.setAdapter(adapter);
+//
+//        adapter.setOnItemClickListener(new RHListAdapter.OnItemClickListener() {
+//            @Override
+//            public void OnItemClick(DocumentSnapshot documentSnapshot, int position) {
+//                String docId = documentSnapshot.getId();
+//                Intent intent = new Intent(MainActivity.this, DetailsBookingActivity.class);
+//                intent.putExtra("documentId", docId);
+//
+//                startActivity(intent);
+//            }
+//        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        adapter.startListening();
+        //adapter.startListening();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        adapter.stopListening();
+        //adapter.stopListening();
     }
 }
